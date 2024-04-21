@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Draw Polygon on Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+      #map {
+        height: 400px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Draw Polygon on Map</h2>
+    <form id="pointsForm">
+      <label for="point1">Point 1 (Latitude, Longitude):</label><br />
+      <input type="text" id="point1" name="point1" /><br />
+      <label for="point2">Point 2 (Latitude, Longitude):</label><br />
+      <input type="text" id="point2" name="point2" /><br />
+      <label for="point3">Point 3 (Latitude, Longitude):</label><br />
+      <input type="text" id="point3" name="point3" /><br />
+      <label for="point4">Point 4 (Latitude, Longitude):</label><br />
+      <input type="text" id="point4" name="point4" /><br /><br />
+      <button type="button" onclick="drawPolygon()">Draw Polygon</button>
+    </form>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+      var map = L.map("map").setView([0, 0], 2);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+      }).addTo(map);
+
+      var drawnItems = new L.FeatureGroup();
+      map.addLayer(drawnItems);
+
+      var markers = [];
+
+      function drawPolygon() {
+        clearMarkers();
+        clearPolygon();
+
+        var point1 = document.getElementById("point1").value.split(",");
+        var point2 = document.getElementById("point2").value.split(",");
+        var point3 = document.getElementById("point3").value.split(",");
+        var point4 = document.getElementById("point4").value.split(",");
+
+        var points = [point1, point2, point3, point4];
+
+        // Check for valid input values
+        for (var i = 0; i < points.length; i++) {
+          if (
+            points[i].length !== 2 ||
+            isNaN(parseFloat(points[i][0])) ||
+            isNaN(parseFloat(points[i][1]))
+          ) {
+            alert(
+              "Invalid input for point " +
+                (i + 1) +
+                ". Please provide latitude and longitude separated by commas."
+            );
+            return;
+          }
+        }
+
+        var polygonPoints = points.map(function (point) {
+          return [parseFloat(point[0]), parseFloat(point[1])];
+        });
+
+        var polygon = L.polygon(polygonPoints, { color: "red" }).addTo(
+          drawnItems
+        );
+        map.fitBounds(polygon.getBounds());
+
+        // Add draggable markers for each point
+        for (var i = 0; i < points.length; i++) {
+          addMarker(points[i], "Point " + (i + 1));
+        }
+      }
+
+      function addMarker(point, name) {
+        var marker = L.marker([parseFloat(point[0]), parseFloat(point[1])], {
+          draggable: true,
+        }).addTo(map);
+        marker
+          .bindPopup(
+            `Name: ${name}<br>Latitude: ${parseFloat(point[0]).toFixed(
+              6
+            )}<br>Longitude: ${parseFloat(point[1]).toFixed(6)}`
+          )
+          .openPopup();
+        markers.push(marker);
+
+        marker.on("dragend", function (event) {
+          var marker = event.target;
+          var position = marker.getLatLng();
+          marker
+            .setPopupContent(
+              `Name: ${name}<br>Latitude: ${position.lat.toFixed(
+                6
+              )}<br>Longitude: ${position.lng.toFixed(6)}`
+            )
+            .openPopup();
+          updatePointCoordinates(
+            name,
+            position.lat.toFixed(6),
+            position.lng.toFixed(6)
+          );
+          drawPolygon();
+        });
+      }
+
+      function clearMarkers() {
+        for (var i = 0; i < markers.length; i++) {
+          map.removeLayer(markers[i]);
+        }
+        markers = [];
+      }
+
+      function clearPolygon() {
+        drawnItems.clearLayers();
+      }
+
+      function updatePointCoordinates(name, lat, lng) {
+        document.getElementById("point" + name.slice(-1)).value =
+          lat + ", " + lng;
+      }
+    </script>
+  </body>
+</html>
