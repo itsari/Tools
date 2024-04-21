@@ -10,6 +10,15 @@
         height: 400px;
         width: 100%;
       }
+      #sectionLengths table {
+        border-collapse: collapse;
+      }
+      #sectionLengths table,
+      #sectionLengths th,
+      #sectionLengths td {
+        border: 1px solid black;
+        padding: 5px;
+      }
     </style>
   </head>
   <body>
@@ -27,6 +36,7 @@
     </form>
 
     <div id="map"></div>
+    <div id="sectionLengths"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -80,6 +90,9 @@
         for (var i = 0; i < points.length; i++) {
           addMarker(points[i], "Point " + (i + 1));
         }
+
+        // Calculate and display section lengths
+        calculateSectionLengths();
       }
 
       function addMarker(point, name) {
@@ -128,6 +141,38 @@
       function updatePointCoordinates(name, lat, lng) {
         document.getElementById("point" + name.slice(-1)).value =
           lat + ", " + lng;
+      }
+
+      function calculateSectionLengths() {
+        var point1 = L.latLng(
+          document.getElementById("point1").value.split(",")
+        );
+        var point2 = L.latLng(
+          document.getElementById("point2").value.split(",")
+        );
+        var point3 = L.latLng(
+          document.getElementById("point3").value.split(",")
+        );
+        var point4 = L.latLng(
+          document.getElementById("point4").value.split(",")
+        );
+
+        // Calculate lengths using Leaflet's built-in distanceTo() method
+        var section1Length = point1.distanceTo(point2).toFixed(2);
+        var section2Length = point2.distanceTo(point3).toFixed(2);
+        var section3Length = point3.distanceTo(point4).toFixed(2);
+        var section4Length = point4.distanceTo(point1).toFixed(2);
+
+        // Display lengths in a table
+        var table =
+          "<h2>Section Lengths</h2><table><tr><th>Section</th><th>Length (meters)</th></tr>";
+        table += "<tr><td>1</td><td>" + section1Length + "</td></tr>";
+        table += "<tr><td>2</td><td>" + section2Length + "</td></tr>";
+        table += "<tr><td>3</td><td>" + section3Length + "</td></tr>";
+        table += "<tr><td>4</td><td>" + section4Length + "</td></tr>";
+        table += "</table>";
+
+        document.getElementById("sectionLengths").innerHTML = table;
       }
     </script>
   </body>
