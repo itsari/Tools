@@ -27,6 +27,7 @@
         border: 1px solid #dddddd;
         text-align: left;
         padding: 8px;
+        cursor: grab;
       }
       #polygon-table th {
         background-color: #f2f2f2;
@@ -284,11 +285,15 @@
         },
       ];
       // Loop through existing polygons array and add them to the map
-      polygons.forEach(function (polygon) {
-        var poly = L.polygon(polygon.points, { color: polygon.color });
-        drawnItems.addLayer(poly);
-        poly.bindPopup(polygon.name);
-      });
+      function addPolygonsToMap() {
+        drawnItems.clearLayers();
+        polygons.forEach(function (polygon) {
+          var poly = L.polygon(polygon.points, { color: polygon.color });
+          drawnItems.addLayer(poly);
+          poly.bindPopup(polygon.name);
+        });
+      }
+      addPolygonsToMap();
 
       // Function to update the polygon table
       function updatePolygonTable() {
@@ -300,6 +305,29 @@
           var pointsCell = row.insertCell(1);
           nameCell.textContent = polygon.name;
           pointsCell.textContent = JSON.stringify(polygon.points);
+          row.draggable = true;
+          // Add event listeners for drag and drop
+          row.addEventListener("dragstart", function (e) {
+            e.dataTransfer.setData("text/plain", JSON.stringify(polygon));
+          });
+          row.addEventListener("dragover", function (e) {
+            e.preventDefault();
+          });
+          row.addEventListener("drop", function (e) {
+            e.preventDefault();
+            var draggedPolygon = JSON.parse(
+              e.dataTransfer.getData("text/plain")
+            );
+            var newIndex = Array.from(e.target.parentNode.children).indexOf(
+              e.target
+            );
+            var oldIndex = polygons.findIndex(function (item) {
+              return item.name === draggedPolygon.name;
+            });
+            polygons.splice(newIndex, 0, polygons.splice(oldIndex, 1)[0]);
+            updatePolygonTable();
+            addPolygonsToMap(); // Update the order on the map
+          });
         });
       }
 
