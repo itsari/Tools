@@ -7,7 +7,7 @@
     <!-- Include Leaflet CSS and JavaScript -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <!-- Include Leaflet.Draw CSS and JavaScript (for drawing polygons) -->
+    <!-- Include Leaflet.Draw CSS and JavaScript (for drawing and editing polygons) -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"
@@ -15,12 +15,35 @@
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
     <style>
       #map {
-        height: 600px;
+        height: 400px;
+      }
+      #polygon-table {
+        margin-top: 20px;
+        border-collapse: collapse;
+        width: 100%;
+      }
+      #polygon-table th,
+      #polygon-table td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+      }
+      #polygon-table th {
+        background-color: #f2f2f2;
       }
     </style>
   </head>
   <body>
     <div id="map"></div>
+    <table id="polygon-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
     <script>
       // Initialize Leaflet map
       var map = L.map("map").setView([32.09, 35.35], 14); // Set initial coordinates and zoom level
@@ -30,6 +53,30 @@
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
+
+      // Initialize Leaflet.draw control
+      var drawnItems = new L.FeatureGroup();
+      map.addLayer(drawnItems);
+      var drawControl = new L.Control.Draw({
+        draw: {
+          polygon: true,
+          polyline: false,
+          rectangle: false,
+          circle: false,
+          marker: false,
+        },
+        edit: {
+          featureGroup: drawnItems,
+        },
+      });
+      map.addControl(drawControl);
+
+      // Event listener to save newly added polygon
+      map.on("draw:created", function (e) {
+        var layer = e.layer;
+        drawnItems.addLayer(layer);
+        updatePolygonTable();
+      });
 
       // Define array to hold polygon coordinates, names, and colors
       var polygons = [
@@ -236,13 +283,28 @@
           color: "pink",
         },
       ];
-
-      // Loop through polygons array and add them to the map
+      // Loop through existing polygons array and add them to the map
       polygons.forEach(function (polygon) {
-        L.polygon(polygon.points, { color: polygon.color })
-          .addTo(map)
-          .bindPopup(polygon.name);
+        var poly = L.polygon(polygon.points, { color: polygon.color });
+        drawnItems.addLayer(poly);
+        poly.bindPopup(polygon.name);
       });
+
+      // Function to update the polygon table
+      function updatePolygonTable() {
+        var tableBody = document.querySelector("#polygon-table tbody");
+        tableBody.innerHTML = "";
+        polygons.forEach(function (polygon) {
+          var row = tableBody.insertRow();
+          var nameCell = row.insertCell(0);
+          var pointsCell = row.insertCell(1);
+          nameCell.textContent = polygon.name;
+          pointsCell.textContent = JSON.stringify(polygon.points);
+        });
+      }
+
+      // Initial update of the polygon table
+      updatePolygonTable();
     </script>
   </body>
 </html>
