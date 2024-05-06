@@ -21,6 +21,7 @@
         color: #fff;
         border: none;
         cursor: pointer;
+        margin-right: 10px;
       }
       button:hover {
         background-color: #0056b3;
@@ -36,8 +37,9 @@
   <body>
     <textarea id="input" placeholder="Paste your data here"></textarea>
     <button onclick="switchCoordinates()">Switch Latitude and Longitude</button>
-    <div id="output"></div>
+    <button onclick="changeAll()">Change All</button>
     <button onclick="copyToClipboard()">Copy to Clipboard</button>
+    <div id="output"></div>
 
     <script>
       function switchCoordinates() {
@@ -49,6 +51,50 @@
             return lon + " " + lat;
           }
         );
+        document.getElementById("output").innerText = output;
+      }
+
+      function changeAll() {
+        var input = document.getElementById("input").value;
+        var lines = input.split("\n");
+
+        // Remove the header line
+        if (lines.length > 0 && lines[0].startsWith("WKT,camera_nam")) {
+          lines.shift(); // Remove the first element
+        }
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+
+          // Skip empty lines
+          if (line === "") continue;
+
+          var parts = line.split('"');
+          var coordinates = parts[1].trim().replace(/\s+/g, ",");
+          var camName = parts[2].trim();
+
+          // Remove commas from camName and ToolTip
+          camName = camName.replace(/,/g, "");
+          var tooltip = camName.replace(/,/g, "");
+
+          var polygonItem = `<app:MapPolygonItem Points="${coordinates}" Fill="#FF00B0F0" Stroke="#FFFFFFFF" x:Name="MapPolygonItem${camName.replace(
+            /\s/g,
+            "_"
+          )}" ToolTip="${tooltip}" Opacity="0.4" app:SynoItem.Layer="CameraPOV">
+<app:SynoItem.AnimationItems>
+<app:ColorAnim x:Key="Fill" DefaultColor="#FF00B0F0">
+<app:ColorEntry Condition="$V.ML01.C_${camName.replace(
+            /\s/g,
+            ""
+          )}#Alarm" Color="#FFFF0000" />
+</app:ColorAnim>
+</app:SynoItem.AnimationItems>
+</app:MapPolygonItem>`;
+
+          lines[i] = polygonItem;
+        }
+
+        var output = lines.join("\n");
         document.getElementById("output").innerText = output;
       }
 
